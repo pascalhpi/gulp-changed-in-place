@@ -1,6 +1,7 @@
 var crypto = require('crypto');
 var path = require('path');
 var through = require('through2');
+var fs = require('fs');
 
 var GLOBAL_CACHE = {};
 
@@ -12,9 +13,15 @@ function processFileByModifiedTime(stream, firstPass, basePath, file, cache) {
 
   cache[filePath] = newTime.getTime();
 
-  if ((!oldTime && firstPass) || (oldTime && oldTime !== newTime.getTime())) {
-    stream.push(file);
+  if (oldTime) {
+    if (oldTime !== newTime.getTime()) {
+        stream.push(file);
+    }
+  } else if (firstPass || newTime.getTime() > cache['.gulp-changed-smart']) {
+      stream.push(file);
   }
+
+  fs.writeFileSync('.gulp-changed-smart', Date.now().toString());
 }
 
 // look for changes by sha1 hash
@@ -59,6 +66,15 @@ module.exports = function (options) {
   var basePath = options.basePath || undefined;
   var cache = options.cache || GLOBAL_CACHE;
   var firstPass = options.firstPass === true;
+
+  if (!cache['.gulp-changed-smart'] && options.howToDetermineDifference === 'modification-time'){
+      if (fs.existsSync('.gulp-changed-smart')) {
+          var fileContent = fs.readFileSync('.gulp-changed-smart', {encoding: 'utf8'});
+          cache['.gulp-changed-smart'] = new Date(parseInt(fileContent));
+      } else {
+          cache['.gulp-changed-smart'] = new Date(0);
+      }
+  }
 
   return through.obj(function (file, encoding, callback) {
     processFile(this, firstPass, basePath, file, cache);

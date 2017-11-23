@@ -4,14 +4,14 @@ var assert = require('assert');
 var concatStream = require('concat-stream');
 var es = require('event-stream');
 var gulp = require('gulp');
-var changedInPlace = require('./');
+var changedSmart = require('./');
 
-describe('gulp-changed-in-place', function () {
+describe('gulp-changed-smart', function () {
 
   describe('when comparing by sha1 hash', function () {
     it('passes all files on start by default', function (done) {
       gulp.src('fixture/*')
-        .pipe(changedInPlace({ firstPass: true, cache: {} }))
+        .pipe(changedSmart({ firstPass: true, cache: {} }))
         .pipe(concatStream(function (buf) {
           assert.equal(2, buf.length);
           assert.equal('a', path.basename(buf[0].path));
@@ -22,7 +22,7 @@ describe('gulp-changed-in-place', function () {
 
     it('does not pass all files on start with `firstPass: false`', function (done) {
       gulp.src('fixture/*')
-        .pipe(changedInPlace({ firstPass: false, cache: {} }))
+        .pipe(changedSmart({ firstPass: false, cache: {} }))
         .pipe(concatStream(function (buf) {
           assert.equal(0, buf.length);
           done();
@@ -36,7 +36,7 @@ describe('gulp-changed-in-place', function () {
       shas[path.join(__dirname, 'fixture/b')] = 'e9d71f5ee7c92d6dc9e92ffdad17b8bd49418f98';
 
       gulp.src('fixture/*')
-        .pipe(changedInPlace({ firstPass: false, cache: shas }))
+        .pipe(changedSmart({ firstPass: false, cache: shas }))
         .pipe(concatStream(function (buf) {
           assert.equal(1, buf.length);
           assert.equal('a', path.basename(buf[0].path));
@@ -48,7 +48,7 @@ describe('gulp-changed-in-place', function () {
       var shas = {};
 
       gulp.src('fixture/*')
-        .pipe(changedInPlace({ firstPass: true, cache: shas }))
+        .pipe(changedSmart({ firstPass: true, cache: shas }))
         .pipe(es.map(function (file, callback) {
           // imitate gulp.dest without actualy writing files
           // @see https://github.com/gulpjs/vinyl-fs/blob/master/lib/prepareWrite.js#L24
@@ -74,7 +74,7 @@ describe('gulp-changed-in-place', function () {
       var basePath = __dirname;
 
       gulp.src('fixture/*')
-        .pipe(changedInPlace({
+        .pipe(changedSmart({
           firstPass: true,
           basePath: basePath,
           cache: shas
@@ -93,7 +93,7 @@ describe('gulp-changed-in-place', function () {
   describe('when comparing by file modification time: ', function () {
     it('passes all files on start by default', function (done) {
       gulp.src('fixture/*')
-        .pipe(changedInPlace({
+        .pipe(changedSmart({
           firstPass: true,
           cache: {},
           howToDetermineDifference: 'modification-time'
@@ -108,7 +108,7 @@ describe('gulp-changed-in-place', function () {
 
     it('does not pass all files on start with `firstPass: false`', function (done) {
       gulp.src('fixture/*')
-        .pipe(changedInPlace({
+        .pipe(changedSmart({
           firstPass: false,
           cache: {},
           howToDetermineDifference: 'modification-time'
@@ -137,7 +137,7 @@ describe('gulp-changed-in-place', function () {
       times[fileB] = fileBTime.getTime();
 
       gulp.src('fixture/*')
-        .pipe(changedInPlace({
+        .pipe(changedSmart({
           firstPass: false,
           cache: times,
           howToDetermineDifference: 'modification-time'
@@ -153,7 +153,7 @@ describe('gulp-changed-in-place', function () {
       var times = {};
 
       gulp.src('fixture/*')
-        .pipe(changedInPlace({
+        .pipe(changedSmart({
           firstPass: true,
           cache: times,
           howToDetermineDifference: 'modification-time'
@@ -183,7 +183,7 @@ describe('gulp-changed-in-place', function () {
       var basePath = __dirname;
 
       gulp.src('fixture/*')
-        .pipe(changedInPlace({
+        .pipe(changedSmart({
           firstPass: true,
           basePath: basePath,
           cache: times,
@@ -195,6 +195,28 @@ describe('gulp-changed-in-place', function () {
             assert.equal(true, times.hasOwnProperty(path.relative(basePath, file.path)), 'file path should be relative');
           });
 
+          done();
+        }));
+    });
+
+    it('should only push files on startup that were changed after last cache update', function (done) {
+      var times = {};
+      var basePath = __dirname;
+      var gulpChangedSmartFileContent = (Date.now() - 1).toString();
+      times['.gulp-changed-smart'] = new Date(parseInt(gulpChangedSmartFileContent));
+      var aFileContent = fs.readFileSync('fixture/a', {encoding: 'utf8'});
+      fs.writeFileSync('fixture/a', aFileContent);
+
+      gulp.src('fixture/*')
+        .pipe(changedSmart({
+          firstPass: false,
+          basePath: basePath,
+          cache: times,
+          howToDetermineDifference: 'modification-time'
+        }))
+        .pipe(concatStream(function (files) {
+          assert.equal(1, files.length, 'exactly one file was changed since last cache update');
+          assert.equal('a', path.basename(files[0].path));
           done();
         }));
     });
