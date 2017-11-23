@@ -1,6 +1,6 @@
 {
   "name": "gulp-changed-smart",
-  "version": "1.0",
+  "version": "1.0.0",
   "description": "Only pass through changed files, even on startup",
   "license": "MIT",
   "repository": "pascalhpi/gulp-changed-smart",
@@ -38,12 +38,12 @@
     "passthrough"
   ],
   "dependencies": {
-    "through2": "^2.0.0"
+    "through2": "^2.0.3"
   },
   "devDependencies": {
-    "concat-stream": "^1.4.6",
-    "event-stream": "^3.3.2",
-    "gulp": "^3.0.0",
-    "mocha": "^3.5.3"
+    "concat-stream": "^1.6.0",
+    "event-stream": "^3.3.4",
+    "gulp": "^3.9.1",
+    "mocha": "^4.0.1"
   }
 }
