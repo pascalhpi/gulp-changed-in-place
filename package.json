@@ -8,10 +8,12 @@
     "name": "Pascal Führlich",
     "email": "pascal.fuehrlich@student.hpi.de"
   },
-  "contributors": [{
-    "name": "Alex Gorbatchev",
-    "email": "alex.gorbatchev@gmail.com"
-  }],
+  "contributors": [
+    {
+      "name": "Alex Gorbatchev",
+      "email": "alex.gorbatchev@gmail.com"
+    }
+  ],
   "engines": {
     "node": ">=0.10.0"
   },
@@ -38,6 +40,7 @@
     "passthrough"
   ],
   "dependencies": {
+    "jsonfile": "^4.0.0",
     "through2": "^2.0.3"
   },
   "devDependencies": {

@@ -8,8 +8,11 @@ const changedSmart = require('./')
 
 describe('gulp-changed-smart', () => {
 
+	// this is more like the gulp object in a real gulpfile
+	const virtualGulp = { seq: ['images'], tasks: { images: { running: true } } }
+
 	it('should only pass through files when their modification time changed', done => {
-		const times = { '.gulp-changed-smart': new Date(0) }
+		const times = {}
 
 		const fileA = path.join(__dirname, 'fixture/a')
 		const fileB = path.join(__dirname, 'fixture/b')
@@ -26,7 +29,7 @@ describe('gulp-changed-smart', () => {
 		times[fileB] = fileBTime
 
 		gulp.src('fixture/*')
-			.pipe(changedSmart({ cache: times }))
+			.pipe(changedSmart(virtualGulp, { cache: times }))
 			.pipe(concatStream(buf => {
 				assert.equal(1, buf.length)
 				assert.equal('a', path.basename(buf[0].path))
@@ -35,10 +38,11 @@ describe('gulp-changed-smart', () => {
 	})
 
 	it('should update cache before pushing file to stream', done => {
-		const times = { '.gulp-changed-smart': new Date(0) }
+		const times = {}
+		fs.unlinkSync('.gulp-changed-smart.json')
 
 		gulp.src('fixture/*')
-			.pipe(changedSmart({ cache: times }))
+			.pipe(changedSmart(virtualGulp, { cache: times }))
 			.pipe(es.map((file, callback) => {
 				// imitate gulp.dest without actualy writing files
 				// @see https://github.com/gulpjs/vinyl-fs/blob/master/lib/prepareWrite.js#L24
@@ -60,11 +64,11 @@ describe('gulp-changed-smart', () => {
 	})
 
 	it('should use paths relative to `basePath`', done => {
-		const times = { '.gulp-changed-smart': new Date(0) }
+		const times = {}
 		const basePath = __dirname
 
 		gulp.src('fixture/*')
-			.pipe(changedSmart({
+			.pipe(changedSmart(virtualGulp, {
 				basePath: basePath,
 				cache: times
 			}))
@@ -79,9 +83,8 @@ describe('gulp-changed-smart', () => {
 	})
 
 	it('should only push files on startup that were changed since last cache update', done => {
-        const gulpChangedSmartFileContent = Date.now().toString()
-		const times = { '.gulp-changed-smart': new Date(parseInt(gulpChangedSmartFileContent)) }
-        const lastCacheUpdate = times['.gulp-changed-smart'].getTime() / 1000
+		const times = { '.gulp-changed-smart-images': new Date(Date.now()) }
+        const lastCacheUpdate = times['.gulp-changed-smart-images'].getTime() / 1000
 
         const fileA = path.join(__dirname, 'fixture/a')
         fs.utimesSync(fileA, 0, lastCacheUpdate + 1) //changed since last cache update
@@ -89,11 +92,16 @@ describe('gulp-changed-smart', () => {
         fs.utimesSync(fileB, 0, lastCacheUpdate - 1) //not changed since last cache update
 
 		gulp.src('fixture/*')
-			.pipe(changedSmart({ cache: times }))
+			.pipe(changedSmart(virtualGulp, { cache: times }))
 			.pipe(concatStream(files => {
 				assert.equal(1, files.length, 'exactly one file was changed since last cache update')
 				assert.equal('a', path.basename(files[0].path))
 				done()
 			}))
+	})
+
+	it('sets the timestamp for the correct task', done => {
+		//TODO
+		assert(false)
 	})
 })
