@@ -1,6 +1,6 @@
 {
   "name": "gulp-changed-smart",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Only pass through changed files, even on startup",
   "license": "MIT",
   "repository": "pascalhpi/gulp-changed-smart",
