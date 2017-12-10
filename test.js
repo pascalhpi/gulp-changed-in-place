@@ -99,9 +99,4 @@ describe('gulp-changed-smart', () => {
 				done()
 			}))
 	})
-
-	it('sets the timestamp for the correct task', done => {
-		//TODO
-		assert(false)
-	})
 })
